@@ -26,22 +26,22 @@ pygame.time.set_timer(cloud_timer, 4500)
 
 # Panda player
 panda_surf = pygame.image.load('Files/PANDA.png').convert_alpha()
-panda_surf = pygame.transform.scale(panda_surf, (120, 200))
+panda_surf = pygame.transform.scale(panda_surf, (80, 130))  # Smaller scale for better fit
 panda_rect = panda_surf.get_rect(topleft=(300, 200))
 panda_mask = pygame.mask.from_surface(panda_surf)
 
 # Obstacles
 obstacle_rect_list = []
-obstacle_surf = pygame.Surface((50, 50), pygame.SRCALPHA)
-obstacle_surf.fill('Blue')
+obstacle_surf = pygame.image.load('Files/rocket.png').convert_alpha()
+obstacle_surf = pygame.transform.scale(obstacle_surf, (80, 240))
 obstacle_mask = pygame.mask.from_surface(obstacle_surf)
 
 obstacle_surf2 = pygame.image.load('Files/Plane.png').convert_alpha()
-obstacle_surf2 = pygame.transform.scale(obstacle_surf2, (300, 200))
+obstacle_surf2 = pygame.transform.scale(obstacle_surf2, (220, 140))
 obstacle_mask2 = pygame.mask.from_surface(obstacle_surf2)
 
-obstacle_surf3 = pygame.Surface((50, 50), pygame.SRCALPHA)
-obstacle_surf3.fill('Red')
+obstacle_surf3 = pygame.image.load('Files/plane2.png').convert_alpha()
+obstacle_surf3 = pygame.transform.scale(obstacle_surf3, (200, 100))
 obstacle_mask3 = pygame.mask.from_surface(obstacle_surf3)
 
 # Game difficulty
@@ -64,7 +64,7 @@ game_over_surf = pygame.transform.scale(game_over_surf, (700, 800))
 game_over_rect = game_over_surf.get_rect(topleft=(0, 0))
 
 # Buttons ------------------------------------------------------------------------------------
-button1 = pygame.image.load('Files/start_btn.png').convert_alpha()
+button1 = pygame.image.load('Files/restart.png').convert_alpha()
 button2 = pygame.image.load('Files/exit_btn.png').convert_alpha()
 class Button():
     def __init__(self, x, y, image, scale):
@@ -109,7 +109,7 @@ def game_reset():
 def cloud_movement(clouds):
     new_clouds = []
     for surf, rect in clouds:
-        rect.y -= speed
+        rect.y -= speed -1 
         if rect.y > -300:
             screen.blit(surf, rect)
             new_clouds.append((surf, rect))
@@ -119,9 +119,9 @@ def panda_movement():
     screen.blit(panda_surf, panda_rect)
     keys = pygame.key.get_pressed()
     if keys[pygame.K_LEFT]:
-        panda_rect.x = max(0, panda_rect.x - 5)
+        panda_rect.x = max(0, panda_rect.x - 6)
     if keys[pygame.K_RIGHT]:
-        panda_rect.x = min(700 - panda_rect.width, panda_rect.x + 5)
+        panda_rect.x = min(700 - panda_rect.width, panda_rect.x + 6)
 
 def obstacle_movement(obstacle_list):
     new_list = []
@@ -135,7 +135,7 @@ def obstacle_movement(obstacle_list):
         else:
             rect.y -= speed
 
-        if rect.y > -50 and -100 <= rect.x <= 800:
+        if rect.y > -300 and -200 <= rect.x <= 900:
             screen.blit(surf, rect)
             new_list.append((surf, rect))
     return new_list
@@ -157,8 +157,8 @@ def collisions(player, obstacles):
     return "playing"
 
 # Button instances
-start_button = Button(350, 400, button1, 0.5)
-exit_button = Button(350, 500, button2, 0.5)
+start_button = Button(350, 500, button1, 0.5)
+exit_button = Button(350,600, button2, 0.5)
 
 # Main loop ------------------------------------------------------------------------------------
 while True:
@@ -179,11 +179,11 @@ while True:
                     )
                 elif rand_type == "red_left":
                     obstacle_rect_list.append(
-                        (obstacle_surf2, obstacle_surf2.get_rect(topleft=(randint(750, 800), randint(850, 1000))))
+                        (obstacle_surf2, obstacle_surf2.get_rect(topleft=(randint(750, 900), randint(850, 1000))))
                     )
                 elif rand_type == "red_right":
                     obstacle_rect_list.append(
-                        (obstacle_surf3, obstacle_surf3.get_rect(topleft=(randint(-100, -60), randint(850, 1000))))
+                        (obstacle_surf3, obstacle_surf3.get_rect(topleft=(randint(-200, -100), randint(850, 1000))))
                     )
 
         if event.type == cloud_timer and game_state == "playing":
