@@ -6,6 +6,9 @@ from sys import exit
 # Screen setup ------------------------------------------------------------------------------------
 pygame.init()
 screen = pygame.display.set_mode((700, 800))
+pygame.display.set_caption('SkyDivers')
+pygame_icon = pygame.image.load('Files/PANDA.png')
+pygame.display.set_icon(pygame_icon)
 clock = pygame.time.Clock()
 pygame.display.set_caption('SkyDivers')
 
