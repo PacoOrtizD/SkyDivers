@@ -29,7 +29,7 @@ pygame.time.set_timer(cloud_timer, 4500)
 
 # Panda player
 panda_surf = pygame.image.load('Files/PANDA.png').convert_alpha()
-panda_surf = pygame.transform.scale(panda_surf, (80, 130))  # Smaller scale for better fit
+panda_surf = pygame.transform.scale(panda_surf, (80, 130))
 panda_rect = panda_surf.get_rect(topleft=(300, 200))
 panda_mask = pygame.mask.from_surface(panda_surf)
 
@@ -69,6 +69,7 @@ game_over_rect = game_over_surf.get_rect(topleft=(0, 0))
 # Buttons ------------------------------------------------------------------------------------
 button1 = pygame.image.load('Files/restart.png').convert_alpha()
 button2 = pygame.image.load('Files/exit_btn.png').convert_alpha()
+
 class Button():
     def __init__(self, x, y, image, scale):
         width = image.get_width()
@@ -90,8 +91,9 @@ class Button():
         return action
 
 # Game state ------------------------------------------------------------------------------------
-game_state = "home"  # "home", "playing", "game_over"
+game_state = "home"
 start_time = 0
+final_score = 0  # ✅ New variable to store final score
 
 def display_score():
     current_time = int(pygame.time.get_ticks() / 1000) - start_time
@@ -100,19 +102,20 @@ def display_score():
     screen.blit(score_surf, score_rect)
 
 def game_reset():
-    global start_time, speed, timer_obstacles
+    global start_time, speed, timer_obstacles, final_score
     start_time = int(pygame.time.get_ticks() / 1000)
     panda_rect.x, panda_rect.y = 300, 200
     obstacle_rect_list.clear()
     cloud_list.clear()
     speed = 2
     timer_obstacles = 3000
+    final_score = 0
     pygame.time.set_timer(obstacle_timer, timer_obstacles)
 
 def cloud_movement(clouds):
     new_clouds = []
     for surf, rect in clouds:
-        rect.y -= speed -1 
+        rect.y -= speed - 1
         if rect.y > -300:
             screen.blit(surf, rect)
             new_clouds.append((surf, rect))
@@ -122,9 +125,13 @@ def panda_movement():
     screen.blit(panda_surf, panda_rect)
     keys = pygame.key.get_pressed()
     if keys[pygame.K_LEFT]:
-        panda_rect.x = max(0, panda_rect.x - 6)
+        panda_rect.x = max(0, panda_rect.x - 5)
     if keys[pygame.K_RIGHT]:
-        panda_rect.x = min(700 - panda_rect.width, panda_rect.x + 6)
+        panda_rect.x = min(700 - panda_rect.width, panda_rect.x + 5)
+    if keys[pygame.K_UP]:
+        panda_rect.y = max(0, panda_rect.y - 3)
+    if keys[pygame.K_DOWN]:
+        panda_rect.y = min(800 - panda_rect.height, panda_rect.y + 3)
 
 def obstacle_movement(obstacle_list):
     new_list = []
@@ -144,6 +151,7 @@ def obstacle_movement(obstacle_list):
     return new_list
 
 def collisions(player, obstacles):
+    global final_score
     for surf, rect in obstacles:
         if surf == obstacle_surf:
             mask = obstacle_mask
@@ -156,12 +164,13 @@ def collisions(player, obstacles):
 
         offset = (rect.x - panda_rect.x, rect.y - panda_rect.y)
         if panda_mask.overlap(mask, offset):
+            final_score = int(pygame.time.get_ticks() / 1000) - start_time  # ✅ Store final score
             return "game_over"
     return "playing"
 
 # Button instances
 start_button = Button(350, 500, button1, 0.5)
-exit_button = Button(350,600, button2, 0.5)
+exit_button = Button(350, 600, button2, 0.5)
 
 # Main loop ------------------------------------------------------------------------------------
 while True:
@@ -205,15 +214,15 @@ while True:
     elif game_state == "playing":
         elapsed_time = int(pygame.time.get_ticks() / 1000) - start_time
 
-        if elapsed_time > 100 and speed < 6:
+        if elapsed_time > 160 and speed < 6:
             speed = 6
             timer_obstacles = 1000
             pygame.time.set_timer(obstacle_timer, timer_obstacles)
-        elif elapsed_time > 80 and speed < 5:
+        elif elapsed_time > 120 and speed < 5:
             speed = 5
             timer_obstacles = 1200
             pygame.time.set_timer(obstacle_timer, timer_obstacles)
-        elif elapsed_time > 60 and speed < 4:
+        elif elapsed_time > 80 and speed < 4:
             speed = 4
             timer_obstacles = 1500
             pygame.time.set_timer(obstacle_timer, timer_obstacles)
@@ -237,6 +246,12 @@ while True:
     elif game_state == "game_over":
         screen.blit(game_over_surf, game_over_rect)
         screen.blit(game_over_text, game_over_textRect)
+
+        # ✅ Show stored final score below the "Game Over" text
+        final_score_surf = font.render(f'Final Score: {final_score}', True, (255, 255, 255))
+        final_score_rect = final_score_surf.get_rect(center=(350, game_over_textRect.bottom + 40))
+        screen.blit(final_score_surf, final_score_rect)
+
         if start_button.draw(screen):
             game_state = "playing"
             game_reset()
@@ -245,4 +260,4 @@ while True:
             game_reset()
 
     pygame.display.update()
-    clock.tick(60)  # Keep frame rate at 60 FPS
+    clock.tick(60)
