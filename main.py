@@ -2,48 +2,55 @@ import pygame
 from random import randint
 import random
 from sys import exit
+import asyncio
+import os
+
+BASE = os.path.dirname(os.path.abspath(__file__))
+ASSETS_DIR = os.path.join(BASE, 'assets')
+if not os.path.exists(ASSETS_DIR):
+    os.makedirs(ASSETS_DIR)
 
 # Screen setup ------------------------------------------------------------------------------------
 pygame.init()
 screen = pygame.display.set_mode((700, 800))
 pygame.display.set_caption('SkyDivers')
-pygame_icon = pygame.image.load('Files/PANDA.png')
+pygame_icon = pygame.image.load('Panda.png')
 pygame.display.set_icon(pygame_icon)
 clock = pygame.time.Clock()
 pygame.display.set_caption('SkyDivers')
 
 # Font
-font = pygame.font.Font('Files/CutePixel.ttf', 50)
+font = pygame.font.Font('CutePixel.ttf', 50)
 
 # Game Elements ------------------------------------------------------------------------------------
 # Cloud surfaces and rects
-cloud1_surf = pygame.image.load('Files/Nube.png').convert_alpha()
+cloud1_surf = pygame.image.load('Nube.png').convert_alpha()
 cloud1_surf = pygame.transform.scale(cloud1_surf, (400, 300))
-cloud2_surf = pygame.image.load('Files/Nube2.png').convert_alpha()
+cloud2_surf = pygame.image.load('Nube2.png').convert_alpha()
 cloud2_surf = pygame.transform.scale(cloud2_surf, (400, 300))
-cloud3_surf = pygame.image.load('Files/Nube2.png').convert_alpha()
+cloud3_surf = pygame.image.load('Nube2.png').convert_alpha()
 cloud3_surf = pygame.transform.scale(cloud3_surf, (400, 300))
 cloud_list = []
 cloud_timer = pygame.USEREVENT + 2
 pygame.time.set_timer(cloud_timer, 4500)
 
 # Panda player
-panda_surf = pygame.image.load('Files/PANDA.png').convert_alpha()
+panda_surf = pygame.image.load('Panda.png').convert_alpha()
 panda_surf = pygame.transform.scale(panda_surf, (80, 130))
 panda_rect = panda_surf.get_rect(topleft=(300, 200))
 panda_mask = pygame.mask.from_surface(panda_surf)
 
 # Obstacles
 obstacle_rect_list = []
-obstacle_surf = pygame.image.load('Files/rocket.png').convert_alpha()
+obstacle_surf = pygame.image.load('Rocket.png').convert_alpha()
 obstacle_surf = pygame.transform.scale(obstacle_surf, (80, 240))
 obstacle_mask = pygame.mask.from_surface(obstacle_surf)
 
-obstacle_surf2 = pygame.image.load('Files/Plane.png').convert_alpha()
+obstacle_surf2 = pygame.image.load('Plane.png').convert_alpha()
 obstacle_surf2 = pygame.transform.scale(obstacle_surf2, (220, 140))
 obstacle_mask2 = pygame.mask.from_surface(obstacle_surf2)
 
-obstacle_surf3 = pygame.image.load('Files/plane2.png').convert_alpha()
+obstacle_surf3 = pygame.image.load('Plane2.png').convert_alpha()
 obstacle_surf3 = pygame.transform.scale(obstacle_surf3, (200, 100))
 obstacle_mask3 = pygame.mask.from_surface(obstacle_surf3)
 
@@ -56,19 +63,19 @@ obstacle_timer = pygame.USEREVENT + 1
 pygame.time.set_timer(obstacle_timer, timer_obstacles)
 
 # Background
-screen_surf = pygame.image.load('Files/background.png').convert()
-homescreen_surf = pygame.image.load('Files/homescreen.png').convert()
+screen_surf = pygame.image.load('Background.png').convert()
+homescreen_surf = pygame.image.load('Homescreen.png').convert()
 
 # Game over screen
 game_over_text = font.render("Game Over!", True, (224, 95, 20))
 game_over_textRect = game_over_text.get_rect(center=(350, 100))
-game_over_surf = pygame.image.load('Files/EndPage.png').convert_alpha()
+game_over_surf = pygame.image.load('EndPage.png').convert_alpha()
 game_over_surf = pygame.transform.scale(game_over_surf, (700, 800))
 game_over_rect = game_over_surf.get_rect(topleft=(0, 0))
 
 # Buttons ------------------------------------------------------------------------------------
-button1 = pygame.image.load('Files/restart.png').convert_alpha()
-button2 = pygame.image.load('Files/exit_btn.png').convert_alpha()
+button1 = pygame.image.load('Restart.png').convert_alpha()
+button2 = pygame.image.load('Exit.png').convert_alpha()
 
 class Button():
     def __init__(self, x, y, image, scale):
@@ -93,7 +100,7 @@ class Button():
 # Game state ------------------------------------------------------------------------------------
 game_state = "home"
 start_time = 0
-final_score = 0  # ✅ New variable to store final score
+final_score = 0  
 
 def display_score():
     current_time = int(pygame.time.get_ticks() / 1000) - start_time
@@ -173,91 +180,96 @@ start_button = Button(350, 500, button1, 0.5)
 exit_button = Button(350, 600, button2, 0.5)
 
 # Main loop ------------------------------------------------------------------------------------
-while True:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            exit()
+async def main():
+    global game_state, start_time, final_score, cloud_list, obstacle_rect_list, speed, timer_obstacles
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
 
-        if event.type == obstacle_timer and game_state == "playing":
+            if event.type == obstacle_timer and game_state == "playing":
+                elapsed_time = int(pygame.time.get_ticks() / 1000) - start_time
+
+                num_obstacles = random.randint(1, 2)
+                for _ in range(num_obstacles):
+                    rand_type = random.choice(["blue", "red_left", "red_right"])
+                    if rand_type == "blue":
+                        obstacle_rect_list.append(
+                            (obstacle_surf, obstacle_surf.get_rect(topleft=(randint(50, 650), 850)))
+                        )
+                    elif rand_type == "red_left":
+                        obstacle_rect_list.append(
+                            (obstacle_surf2, obstacle_surf2.get_rect(topleft=(randint(750, 900), randint(850, 1000))))
+                        )
+                    elif rand_type == "red_right":
+                        obstacle_rect_list.append(
+                            (obstacle_surf3, obstacle_surf3.get_rect(topleft=(randint(-200, -100), randint(850, 1000))))
+                        )
+
+            if event.type == cloud_timer and game_state == "playing":
+                cloud_choice = random.choice([cloud1_surf, cloud2_surf, cloud3_surf])
+                cloud_list.append((cloud_choice, cloud_choice.get_rect(topleft=(randint(-50, 650), randint(800, 1000)))))
+
+        screen.fill("Black")
+
+        if game_state == "home":
+            screen.blit(homescreen_surf, (0, 0))
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_SPACE]:
+                game_state = "playing"
+                game_reset()
+
+        elif game_state == "playing":
             elapsed_time = int(pygame.time.get_ticks() / 1000) - start_time
 
-            num_obstacles = random.randint(1, 2)
-            for _ in range(num_obstacles):
-                rand_type = random.choice(["blue", "red_left", "red_right"])
-                if rand_type == "blue":
-                    obstacle_rect_list.append(
-                        (obstacle_surf, obstacle_surf.get_rect(topleft=(randint(50, 650), 850)))
-                    )
-                elif rand_type == "red_left":
-                    obstacle_rect_list.append(
-                        (obstacle_surf2, obstacle_surf2.get_rect(topleft=(randint(750, 900), randint(850, 1000))))
-                    )
-                elif rand_type == "red_right":
-                    obstacle_rect_list.append(
-                        (obstacle_surf3, obstacle_surf3.get_rect(topleft=(randint(-200, -100), randint(850, 1000))))
-                    )
+            if elapsed_time > 160 and speed < 6:
+                speed = 6
+                timer_obstacles = 1000
+                pygame.time.set_timer(obstacle_timer, timer_obstacles)
+            elif elapsed_time > 120 and speed < 5:
+                speed = 5
+                timer_obstacles = 1200
+                pygame.time.set_timer(obstacle_timer, timer_obstacles)
+            elif elapsed_time > 80 and speed < 4:
+                speed = 4
+                timer_obstacles = 1500
+                pygame.time.set_timer(obstacle_timer, timer_obstacles)
+            elif elapsed_time > 40 and speed < 3:
+                speed = 3
+                timer_obstacles = 2000
+                pygame.time.set_timer(obstacle_timer, timer_obstacles)
 
-        if event.type == cloud_timer and game_state == "playing":
-            cloud_choice = random.choice([cloud1_surf, cloud2_surf, cloud3_surf])
-            cloud_list.append((cloud_choice, cloud_choice.get_rect(topleft=(randint(-50, 650), randint(800, 1000)))))
+            screen.blit(screen_surf, (0, 0))
 
-    screen.fill("Black")
+            cloud_list = cloud_movement(cloud_list)
 
-    if game_state == "home":
-        screen.blit(homescreen_surf, (0, 0))
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_SPACE]:
-            game_state = "playing"
-            game_reset()
+            panda_movement()
 
-    elif game_state == "playing":
-        elapsed_time = int(pygame.time.get_ticks() / 1000) - start_time
+            obstacle_rect_list = obstacle_movement(obstacle_rect_list)
 
-        if elapsed_time > 160 and speed < 6:
-            speed = 6
-            timer_obstacles = 1000
-            pygame.time.set_timer(obstacle_timer, timer_obstacles)
-        elif elapsed_time > 120 and speed < 5:
-            speed = 5
-            timer_obstacles = 1200
-            pygame.time.set_timer(obstacle_timer, timer_obstacles)
-        elif elapsed_time > 80 and speed < 4:
-            speed = 4
-            timer_obstacles = 1500
-            pygame.time.set_timer(obstacle_timer, timer_obstacles)
-        elif elapsed_time > 40 and speed < 3:
-            speed = 3
-            timer_obstacles = 2000
-            pygame.time.set_timer(obstacle_timer, timer_obstacles)
+            display_score()
 
-        screen.blit(screen_surf, (0, 0))
+            game_state = collisions(panda_rect, obstacle_rect_list)
 
-        cloud_list = cloud_movement(cloud_list)
+        elif game_state == "game_over":
+            screen.blit(game_over_surf, game_over_rect)
+            screen.blit(game_over_text, game_over_textRect)
 
-        panda_movement()
+            final_score_surf = font.render(f'Final Score: {final_score}', True, (255, 255, 255))
+            final_score_rect = final_score_surf.get_rect(center=(350, game_over_textRect.bottom + 40))
+            screen.blit(final_score_surf, final_score_rect)
 
-        obstacle_rect_list = obstacle_movement(obstacle_rect_list)
+            if start_button.draw(screen):
+                game_state = "playing"
+                game_reset()
+            if exit_button.draw(screen):
+                game_state = "home"
+                game_reset()
 
-        display_score()
+        await asyncio.sleep(0)
+        pygame.display.update()
+        clock.tick(60)
 
-        game_state = collisions(panda_rect, obstacle_rect_list)
-
-    elif game_state == "game_over":
-        screen.blit(game_over_surf, game_over_rect)
-        screen.blit(game_over_text, game_over_textRect)
-
-        # ✅ Show stored final score below the "Game Over" text
-        final_score_surf = font.render(f'Final Score: {final_score}', True, (255, 255, 255))
-        final_score_rect = final_score_surf.get_rect(center=(350, game_over_textRect.bottom + 40))
-        screen.blit(final_score_surf, final_score_rect)
-
-        if start_button.draw(screen):
-            game_state = "playing"
-            game_reset()
-        if exit_button.draw(screen):
-            game_state = "home"
-            game_reset()
-
-    pygame.display.update()
-    clock.tick(60)
+asyncio.run(main())
+    
